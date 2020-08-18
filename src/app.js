@@ -2,6 +2,21 @@ import React from 'react';
 import ReactDom from 'react-dom';
 import NoteCard from './notesCard.js'
 
+const firebaseConfig = {
+    apiKey: "AIzaSyAvNIJu0_c0r2RuRm0QlrWqDn6NeQgRXx4",
+    authDomain: "notetorious-30912.firebaseapp.com",
+    databaseURL: "https://notetorious-30912.firebaseio.com",
+    projectId: "notetorious-30912",
+    storageBucket: "notetorious-30912.appspot.com",
+    messagingSenderId: "517600560139",
+    appId: "1:517600560139:web:46193bd618dd4c2936330e",
+    measurementId: "G-9DERZXEMX1"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  //firebase.analytics();
+
+
 class App extends React.Component {
     constructor(){
         super();
@@ -12,6 +27,20 @@ class App extends React.Component {
         this.addNote = this.addNote.bind(this);
     }
     
+    componentDidMount(){
+        firebase.database().ref().on('value', (res) => {
+            const userData = res.val();
+            const dataArray = [];
+            for(let objKey in res.val()){
+                userData[objKey].key = objKey;
+                dataArray.push(userData[objKey])
+            }
+            this.setState({
+                notes: dataArray
+            })
+
+        });
+    }
     showSideBar(e){
         e.preventDefault();
         this.sidebar.classList.toggle("show");
@@ -23,15 +52,20 @@ class App extends React.Component {
             title: this.noteTitle.value,
             text: this.noteText.value
         };
-        const newNotes = Array.from(this.state.notes);
-        newNotes.push(note);
-        this.setState({
-            notes: newNotes
-        });
+        
+        const dbRef = firebase.database().ref();
+        dbRef.push(note);
+
         this.noteTitle.value = "";
         this.noteText.value = "";
         this.showSideBar(e);
     }
+
+    removeNote(noteID){
+        const dbRef = firebase.database().ref(noteID);
+        dbRef.remove();
+    }
+
     render(){
         return(
             <div>
@@ -44,7 +78,7 @@ class App extends React.Component {
                 <section className="notes">
                     {this.state.notes.map((note, i) => {
                         return (
-                            <NoteCard note={note} key={`note-${i}`}/>
+                            <NoteCard note={note} key={`note-${i}`} removeNote={this.removeNote}/>
                         )
                     }).reverse()}
                 </section>
